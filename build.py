@@ -92,11 +92,11 @@ def main():
     subprocess.run(['node', '--check', str(stage/'runtime.js')], check=True)
     (stage/'bin').mkdir()
     (stage/'bin/frida-inject').write_bytes(runtime)
-    # Magisk deletes customize.sh after installation. Only hash installed files.
+    # Magisk removes these root files after installation. Hash persistent payloads.
     manifest = ''.join(sha(p.read_bytes())+'  '+p.relative_to(stage).as_posix()+'\n'
-                       for p in sorted(stage.rglob('*')) if p.is_file() and p.name != 'customize.sh')
+                       for p in sorted(stage.rglob('*')) if p.is_file() and p.relative_to(stage).as_posix() not in ('customize.sh', 'README.md'))
     (stage/'payload.sha256').write_text(manifest)
-    archive(stage, 'firetv-dtshd-passthrough-v0.1.1.zip')
+    archive(stage, 'firetv-dtshd-passthrough-v0.1.2.zip')
 
 if __name__ == '__main__':
     main()

@@ -89,7 +89,7 @@ while enabled; do
         while IFS= read -r line; do
             log "$line"
             case "$line" in
-                *'"kind":"ready"'*) touch "$STATE/ready"; status "ACTIVE pid=$pid version=0.1.1" ;;
+                *'"kind":"ready"'*) touch "$STATE/ready"; status "ACTIVE pid=$pid version=0.1.2" ;;
                 *'DTS_FATAL'*) touch "$STATE/fatal"; status "ATTACH_FAILED pid=$pid" ;;
                 *'"kind":"trial-error"'*) status "STREAM_ERROR pid=$pid (stop playback; see service.log)" ;;
             esac

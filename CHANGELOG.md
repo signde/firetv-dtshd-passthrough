@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.2 (experimental)
+
+- Exclude root README.md from the persistent payload manifest because Magisk
+  removes it after installation. This fixes startup rejection of the GitHub
+  v0.1.1 ZIP after an actual install.
+- Preserve the tested audio hooks, packer and Frida runtime.
+- Pass actual Magisk install, reboot activation and user playback smoke testing
+  on FC3b with Dolby v0.3.1; add a post-install cleanup regression check.
+
 ## 0.1.1 (experimental)
 
 - Retain native code for the lifetime of the injected script, fixing the packaged

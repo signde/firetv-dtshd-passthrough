@@ -27,3 +27,16 @@ App and format identities are user-observed, not inferred from HAL events.
 No audio bytes were captured by the installed module.
 The earlier temporary prototype passed eight HBR sessions and12 seek/resume
 resets in Nova/Emby; this does not substitute for packaged playback verification.
+
+Published-ZIP installation follow-up, 2026-10-06
+The actual Magisk install removes root README.md after customize.sh returns.
+The GitHub v0.1.1 ZIP incorrectly required it in the startup manifest.
+v0.1.2 excludes both Magisk-removed root files. Actual Magisk installation,
+post-cleanup payload verification and reboot passed on FC3b. Startup reported
+ACTIVE on HAL423 with nativeAfterGc=true; SELinux remained enforcing.
+The user confirmed the post-reboot playback smoke test passed with Dolby
+v0.3.1 and DTS v0.1.2. The audio hooks, native packer and injector are unchanged.
+A packaging regression test simulates removal of the root README.md and
+customize.sh, verifies all persistent hashes, and rejects modified service,
+agent and injector payloads. Release documentation was updated after testing;
+all executable payloads match the smoke-tested ZIP byte for byte.

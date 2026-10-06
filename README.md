@@ -3,7 +3,7 @@
 Experimental Magisk module that preserves full DTS-HD/DTS:X audio through the
 verified Fire TV Cube 3 vendor audio path, where the stock packer emits DTS core.
 
-**Version 0.1.1. Supported: Gazelle, Fire OS PS7702.4965N, Android 9.**
+**Version 0.1.2. Supported: Gazelle, Fire OS PS7702.4965N, Android 9.**
 Installation and startup require exact matches for all four libraries listed in
 [firmware.sha256](firmware.sha256). Karat and other firmware are not supported.
 
@@ -15,7 +15,7 @@ Installation and startup require exact matches for all four libraries listed in
 - A receiver advertising eight-channel DTS-HD at 192 kHz.
 - Best Available in Fire OS; system passthrough in Emby/Nova.
 
-Install the built ZIP in Magisk and reboot. Allow roughly 65 seconds after Android
+Download the [v0.1.2 module ZIP](https://github.com/signde/firetv-dtshd-passthrough/releases/download/v0.1.2/firetv-dtshd-passthrough-v0.1.2.zip), install it in Magisk and reboot. Allow roughly 65 seconds after Android
 boot completes. GitHub's automatic source ZIP is not an installable module.
 From a root shell:
 
@@ -39,7 +39,10 @@ operation. The installed module captures no audio bytes. Runtime supervision
 waits for process exit and reattaches after an audio-service restart. Frida may
 install injection-related SELinux allowances; SELinux remains enforcing.
 
-The boot-loaded v0.1.1 package passed user playback checks for DD, DD+, DTS-HD MA
+The corrected v0.1.2 package passed actual Magisk installation, reboot activation
+and a user playback smoke test on FC3b alongside Dolby v0.3.1.
+
+The earlier boot-loaded local v0.1.1 package passed user playback checks for DD, DD+, DTS-HD MA
 and DTS:X in Emby, Nova and Kodi. Four patched HD sessions and thirteen
 discontinuity resets had clean teardown and no errors. Scope: tested 48 kHz,
 512-sample core frames. See [VALIDATION.txt](VALIDATION.txt). Receiver hotplug,
@@ -51,7 +54,11 @@ Making DTS standalone requires its own tested boot/resume handling.
 
 ## Runtime behavior and troubleshooting
 
-Version 0.1.1 retains its native code for the entire script lifetime and forces
+Version 0.1.2 also fixes the persistent manifest: Magisk removes the root README.md
+and installer script after installation, so neither is required by boot-time checks.
+Use v0.1.2 instead of the GitHub v0.1.1 ZIP, which failed this post-install check.
+
+Version 0.1.2 retains its native code for the entire script lifetime and forces
 garbage collection before exercising native functions at startup. Only a passed
 self-test allows `ACTIVE`. Version 0.1.0 had a native-code lifetime regression;
 do not install it.
@@ -102,6 +109,7 @@ python3 build.py --fetch-runtime
 # Or use an existing official, uncompressed ARM32 runtime:
 python3 build.py --runtime /path/to/frida-inject
 python3 tests/run.py  # additionally requires clang with ASan/UBSan
+python3 tests/package.py dist/firetv-dtshd-passthrough-v0.1.2.zip
 ```
 
 The download is pinned to Frida 17.22.2 and both compressed and uncompressed
