@@ -1,0 +1,29 @@
+Persistent package v0.1.1, 2026-10-06
+Target: Gazelle PS7702.4965N, Magisk30.2. Separate from the Dolby module.
+
+v0.1.0 boot/restart supervision worked, and DD/DD+ playback passed, but DTS
+playback failed before first packing. Its wrapper let the native CModule be
+collected, leaving function pointers into unmapped executable memory.
+Reproduced in a disposable ARM32 process: unretained native reset faults after
+collection; retained native reset succeeds. No live audio used by that test.
+
+v0.1.1 retains the CModule explicitly. After leaving the same setup scope and
+forcing garbage collection, the actual captured Emby raw stream repacks to
+19,267,584 bytes with SHA256:
+32d0304b679d60dfa33667a342a4ce85b8eebfbc81d0c018dbb0c52f607252bf
+for input chunks7,2012,131072. This exactly matches the validated reference.
+Startup now forces GC and tests the native functions before announcing ACTIVE.
+The native C packer and established transport/timing logic are unchanged.
+
+v0.1.1 installation and reboot activation passed on HAL425. Startup reported
+nativeAfterGc=true before ACTIVE. Installed payload hashes all pass, HDMI mode
+reads6, SELinux remains enforcing, and the separate Dolby module hashes are
+unchanged. Final audible AVR playback validation PASSED: user confirms Emby,
+Nova and Kodi correctly play DD, DD+, DTS-HD MA and DTS:X with v0.1.1 active.
+The saved boot-session log records four patched HD stream lifetimes, thirteen
+discontinuity resets, four matching transport closures/timing restorations/owner
+cleanups, and no trial-error or fatal events. HAL425 remained active throughout.
+App and format identities are user-observed, not inferred from HAL events.
+No audio bytes were captured by the installed module.
+The earlier temporary prototype passed eight HBR sessions and12 seek/resume
+resets in Nova/Emby; this does not substitute for packaged playback verification.
