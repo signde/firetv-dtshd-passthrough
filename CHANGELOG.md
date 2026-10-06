@@ -14,6 +14,12 @@
   transport/timing corrections, stream cleanup and audio-service restart handling.
 - Boot supervision worked, but packaged DTS playback failed. Fixed in 0.1.1.
 
+## Release packaging
+
+- Include the pinned dependency inventory, component notices and source companion.
+- Document rebuilding/relinking and replacing the integrity-pinned Frida runtime.
+- Keep the official Frida binary and tested audio hooks unchanged.
+
 ## Source repository preparation
 
 - Add an explicit build file list, pinned runtime retrieval and synthetic native tests.

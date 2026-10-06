@@ -80,7 +80,8 @@ def main():
     names = ['module.prop', 'service.sh', 'customize.sh', 'README.md',
              'VALIDATION.txt', 'firmware.sha256', 'skip_mount', 'src/native.c',
              'src/agent.js', 'LICENSE', 'NOTICE.md', 'CHANGELOG.md', 'build.py']
-    names += [p.relative_to(ROOT).as_posix() for p in sorted((ROOT/'licenses').iterdir()) if p.is_file()]
+    names += [p.relative_to(ROOT).as_posix() for directory in ('licenses', 'third_party')
+              for p in sorted((ROOT/directory).rglob('*')) if p.is_file()]
     stage = stage_files(names)
     expected = {line.split()[1]: line.split()[0] for line in (ROOT/'firmware.sha256').read_text().splitlines()}
     source = 'try {\nconst EXPECTED_LIBRARIES=' + json.dumps(expected) + ';\n'

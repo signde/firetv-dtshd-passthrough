@@ -6,11 +6,17 @@ not replace the licenses of Frida or any firmware components.
 ## Frida 17.22.2
 
 The build packages the official `frida-inject-17.22.2-android-arm` executable.
-It is not committed to this repository. Its core/gum license notices and the
-referenced LGPL text are retained under licenses/. Upstream source and build
-instructions: https://github.com/frida/frida/tree/17.22.2
+It is not committed to this repository. The module ZIP includes component notices
+under licenses/. A pinned source companion is published on the same release:
+`frida-17.22.2-source-and-notices.tar.gz`.
 
-Release: https://github.com/frida/frida/releases/tag/17.22.2
+See [the dependency inventory](third_party/frida/README.md),
+[source manifest](third_party/frida/source-manifest.json), and
+[rebuild/relink instructions](third_party/frida/BUILDING.md).
+Those materials cover the additional LGPL and permissively licensed components;
+Frida's top-level wxWindows exception does not override their individual terms.
+
+Upstream: https://github.com/frida/frida/tree/17.22.2
 
 - Compressed SHA256: cb9621771f5922272ef64c51259b904027cb026d756864716fc98455f338d356
 - Executable SHA256: 6a6d539f09cc2ed2679b8bdea3ce2cb343224adc6887d9fb227b5d1f41bebf07

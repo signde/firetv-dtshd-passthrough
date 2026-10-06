@@ -120,6 +120,8 @@ runtime equivalence to the tested v0.1.1 package is checked separately.
 ## License and releases
 
 Original project code is MIT licensed. Frida retains its own licenses, included
-under licenses/; see [NOTICE.md](NOTICE.md) for upstream source and provenance.
+under licenses/; see [NOTICE.md](NOTICE.md) for source, dependency notices and
+rebuild instructions. Each release also provides the pinned Frida source companion
+archive and its checksum. That archive is for source access, not Magisk installation.
 [CHANGELOG.md](CHANGELOG.md) records versions. No update feed or automated
 publishing is configured. Keep the module ID `firetv_dtshd_passthrough` stable.
