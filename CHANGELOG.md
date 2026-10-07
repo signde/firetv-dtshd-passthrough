@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.3 (experimental)
+
+- Accept three exact four-library profiles covering the 21 supplied PS7688
+  through PS7717 builds. Two newer HAL hashes differ only in metadata.
+- Share profile selection between installation and startup; require the same
+  complete profile in the injected agent. Unknown combinations remain rejected.
+- Keep audio hooks, structure offsets, native packer and Frida unchanged.
+- Add corpus checks for allowed, older, corrupt and mixed library sets.
+- Hardware checks and user audio/video confirmation passed on PS7702.4965N,
+  PS7714.5506N and PS7717.5741N, one representative of each accepted profile.
+  Other listed builds have static compatibility evidence only.
+
 ## 0.1.2 (experimental)
 
 - Exclude root README.md from the persistent payload manifest because Magisk

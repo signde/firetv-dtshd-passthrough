@@ -19,7 +19,8 @@ def valid(payload):
                for name, digest in manifest.items())
 
 assert valid(files), 'Post-install payload verification failed'
-for name in ('service.sh', 'runtime.js', 'bin/frida-inject'):
+for name in ('service.sh', 'runtime.js', 'bin/frida-inject', 'verify-firmware.sh',
+             'firmware/ps7688.sha256', 'firmware/ps7713.sha256', 'firmware/ps7715.sha256'):
     assert name in manifest, f'Critical payload not covered: {name}'
     damaged = dict(files)
     damaged[name] += b'corruption'

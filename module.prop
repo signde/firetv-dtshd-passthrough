@@ -1,6 +1,6 @@
 id=firetv_dtshd_passthrough
 name=Fire TV DTS-HD MA & DTS:X Passthrough (Gazelle)
-version=0.1.2-experimental
-versionCode=3
+version=0.1.3-experimental
+versionCode=4
 author=signde
-description=Experimental system DTS-HD MA/DTS:X packing for the verified Cube 3 PS7702.4965N audio libraries. Separate companion to the Dolby passthrough module. Root required; disable and reboot to undo.
+description=Experimental system DTS-HD MA/DTS:X packing for the verified Cube 3 PS7688-PS7717 audio library profiles. Separate companion to the Dolby passthrough module. Root required; disable and reboot to undo.

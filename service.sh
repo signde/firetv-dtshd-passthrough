@@ -1,6 +1,7 @@
 #!/system/bin/sh
 # Magisk executes this with BusyBox ash standalone mode. No listening server.
 MODDIR=${0%/*}
+. "$MODDIR/verify-firmware.sh"
 umask 077
 exec 9>/dev/firetv_dtshd.lock
 flock -n 9 || exit 0
@@ -18,7 +19,7 @@ enabled() { [ ! -e "$MODDIR/disable" ] && [ ! -e "$MODDIR/remove" ]; }
 verify() {
     [ "$(getprop ro.product.device)" = gazelle ] &&
     [ "$(getprop ro.build.version.sdk)" = 28 ] &&
-    sha256sum -c "$MODDIR/firmware.sha256" >/dev/null 2>&1 &&
+    verify_firmware "$MODDIR" &&
     (cd "$MODDIR" && sha256sum -c payload.sha256 >/dev/null 2>&1)
 }
 pause_enabled() {
@@ -89,7 +90,7 @@ while enabled; do
         while IFS= read -r line; do
             log "$line"
             case "$line" in
-                *'"kind":"ready"'*) touch "$STATE/ready"; status "ACTIVE pid=$pid version=0.1.2" ;;
+                *'"kind":"ready"'*) touch "$STATE/ready"; status "ACTIVE pid=$pid version=0.1.3" ;;
                 *'DTS_FATAL'*) touch "$STATE/fatal"; status "ATTACH_FAILED pid=$pid" ;;
                 *'"kind":"trial-error"'*) status "STREAM_ERROR pid=$pid (stop playback; see service.log)" ;;
             esac

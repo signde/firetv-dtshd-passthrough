@@ -1,11 +1,16 @@
-// Persistent experimental Gazelle PS7702.4965N companion. See README.md.
+// Persistent experimental Gazelle companion for verified audio profiles. See README.md.
 // Only a newly opened raw DTS-HD/48k stream is eligible. Existing streams and
 // other codecs retain their original functions/configurations.
 if(Process.arch!=='arm' || Process.pointerSize!==4) throw new Error('ARM32 required');
-for(const [path,expected] of Object.entries(EXPECTED_LIBRARIES)) {
-  if(Checksum.compute('sha256',File.readAllBytes(path))!==expected)
-    throw new Error('Unsupported vendor library: '+path);
+const libraryHashes={};
+for(const profile of EXPECTED_FIRMWARE_PROFILES) {
+  for(const path of Object.keys(profile)) {
+    if(!(path in libraryHashes)) libraryHashes[path]=Checksum.compute('sha256',File.readAllBytes(path));
+  }
 }
+if(!EXPECTED_FIRMWARE_PROFILES.some(profile=>
+  Object.entries(profile).every(([path,expected])=>libraryHashes[path]===expected)))
+  throw new Error('Unsupported vendor library combination');
 const cm=new CModule(NATIVE_SOURCE);
 // NativeFunction stores an address, not ownership of its CModule. The packaged
 // try-block ends after setup; retain the executable code for the script lifetime.
@@ -305,6 +310,6 @@ setTimeout(()=>{
     reset(state);discontinuity(state);clear(out,32768);
     if(pack(state,input,0,out,32768,length,0)!==0 || length.readU32()!==0 || state.readU32()!==0)
       throw new Error('Native startup self-test failed');
-    armed=true;event('ready',{pid:Process.id,arch:Process.arch,version:'0.1.2',capture:false,nativeAfterGc:true});
+    armed=true;event('ready',{pid:Process.id,arch:Process.arch,version:'0.1.3',capture:false,nativeAfterGc:true});
   } catch(e) {console.error('DTS_FATAL '+e.stack);}
 },1000);

@@ -3,19 +3,34 @@
 Experimental Magisk module that preserves full DTS-HD/DTS:X audio through the
 verified Fire TV Cube 3 vendor audio path, where the stock packer emits DTS core.
 
-**Version 0.1.2. Supported: Gazelle, Fire OS PS7702.4965N, Android 9.**
-Installation and startup require exact matches for all four libraries listed in
-[firmware.sha256](firmware.sha256). Karat and other firmware are not supported.
+**Version 0.1.3 experimental. Gazelle, Android 9 only.**
+Installation, startup and the injected agent require one complete four-library
+profile from [firmware/](firmware/). The supplied PS7688 through PS7717 builds
+share the tested PS7702 audio code; newer HAL hashes differ only in build-ID
+and debug metadata. This is static compatibility evidence, not playback
+validation of every firmware. Karat and unknown library combinations are rejected.
+
+| Exact library profile | Supplied matching builds |
+| --- | --- |
+| ps7688 | PS7688.4591, PS7690.4714/.4716, PS7696.5226/.5229, PS7699.4894/.4896, PS7702.4965, PS7704.5024, PS7706.5106, PS7707.5376, PS7710.6003, PS7711.5272, PS7712.5371 |
+| ps7713 | PS7713.5443, PS7714.5503/.5506/.5507 |
+| ps7715 | PS7715.5585, PS7716.5665, PS7717.5741 |
+
+Profile names identify library families, not an unrestricted firmware-version
+range. All four hashes must match the same profile. The packer, hook addresses
+and firmware structure offsets are unchanged from v0.1.2.
 
 ## Requirements and installation
 
-- Root and Magisk (tested with Magisk 30.2).
+- Root and Magisk (tested with Magisk 30.2 and 30.7).
 - The separate [Dolby passthrough module](https://github.com/signde/firetv-dolby-passthrough)
-  installed and enabled. It maintains `hdmi_format=6` at boot and after sleep/wake.
+  installed and enabled. Version 0.3.2 is recommended: it maintains `hdmi_format=6`
+  at boot, after sleep/wake, and following watched framework/audio restart events.
 - A receiver advertising eight-channel DTS-HD at 192 kHz.
 - Best Available in Fire OS; system passthrough in Emby/Nova.
 
-Download the [v0.1.2 module ZIP](https://github.com/signde/firetv-dtshd-passthrough/releases/download/v0.1.2/firetv-dtshd-passthrough-v0.1.2.zip), install it in Magisk and reboot. Allow roughly 65 seconds after Android
+Download the [v0.1.3 module ZIP](https://github.com/signde/firetv-dtshd-passthrough/releases/download/v0.1.3/firetv-dtshd-passthrough-v0.1.3.zip),
+install it in Magisk and reboot. Allow roughly 65 seconds after Android
 boot completes. GitHub's automatic source ZIP is not an installable module.
 From a root shell:
 
@@ -39,13 +54,29 @@ operation. The installed module captures no audio bytes. Runtime supervision
 waits for process exit and reattaches after an audio-service restart. Frida may
 install injection-related SELinux allowances; SELinux remains enforcing.
 
-The corrected v0.1.2 package passed actual Magisk installation, reboot activation
-and a user playback smoke test on FC3b alongside Dolby v0.3.1.
+Version 0.1.3 passed hardware checks on FC3b with PS7702.4965N, PS7714.5506N
+and PS7717.5741N. The user confirmed in-person audio/video testing passed on all
+three, covering one representative of each accepted library profile.
+Instrumented Nova checks identified DTS-HD MA, DTS:X, DD+, DD+ Atmos and TrueHD
+at the receiver. Pause/resume and post-wake DTS-HD playback were checked too.
+On PS7717, Dolby v0.3.2 also recovered after a controlled framework restart;
+DTS reattached and subsequent DD+ Atmos and DTS:X playback passed without manual
+mode restoration. The runtime payloads are unchanged from those tested candidates.
+
+Earlier PS7702/PS7714 runs with Dolby v0.3.1 needed manual restoration after late
+bypass resets. The PS7714 reset followed a framework watchdog whose underlying
+cause remains unproven. Dolby v0.3.2 handles watched restart events; it does not
+prevent watchdogs or guarantee recovery from every possible mode reset.
+Other accepted builds have static compatibility evidence, not individual playback
+tests.
+
+The corrected v0.1.2 package previously passed actual Magisk installation, reboot
+activation and a user playback smoke test on FC3b alongside Dolby v0.3.1.
 
 The earlier boot-loaded local v0.1.1 package passed user playback checks for DD, DD+, DTS-HD MA
 and DTS:X in Emby, Nova and Kodi. Four patched HD sessions and thirteen
 discontinuity resets had clean teardown and no errors. Scope: tested 48 kHz,
-512-sample core frames. See [VALIDATION.txt](VALIDATION.txt). Receiver hotplug,
+512-sample core frames. Receiver hotplug,
 arbitrary source profiles and other firmware remain unvalidated. Already-working
 Kodi passthrough continues to work; app/server transcoding cannot be undone here.
 
@@ -56,7 +87,7 @@ Making DTS standalone requires its own tested boot/resume handling.
 
 Version 0.1.2 also fixes the persistent manifest: Magisk removes the root README.md
 and installer script after installation, so neither is required by boot-time checks.
-Use v0.1.2 instead of the GitHub v0.1.1 ZIP, which failed this post-install check.
+Use v0.1.2 or later instead of the GitHub v0.1.1 ZIP, which failed this check.
 
 Version 0.1.2 retains its native code for the entire script lifetime and forces
 garbage collection before exercising native functions at startup. Only a passed
@@ -69,7 +100,7 @@ each new DTS-HD stream is activated. Unsupported initial streams stay on the sto
 path, as do streams already open when the module attaches.
 
 There is no idle polling. Only startup and audio-service restarts trigger bounded
-HDMI-mode checks; the Dolby module handles sleep/resume. Duplicate attachment to
+HDMI-mode checks; the Dolby module handles sleep/resume and, from v0.3.2, watched service restarts. Duplicate attachment to
 the same audio process is refused. Three rapid audio-process exits latch a
 `blocked` file in the module directory to prevent a restart loop. Inspect the logs
 before clearing it. Never disable SELinux globally to work around a failure.
@@ -97,8 +128,18 @@ and driver transport. Tested samples were:
 Emby encountered `DirectPlayError` on Movement and server-transcoded it to AC3
 5.1 at 384 kbps, which this packer cannot reverse. Other sample rates, core frame
 periods, receiver hotplug during playback and unrelated firmware are unvalidated.
-Prototype results do not substitute for packaged playback checks; the successful
-persistent v0.1.1 checks are recorded separately in [VALIDATION.txt](VALIDATION.txt).
+Prototype results do not substitute for the packaged playback checks described above.
+
+## Player limitations
+
+The module needs the original DTS-HD stream to reach the system packing path.
+It cannot recover HD extensions discarded by an app or undo server transcoding.
+On PS7702, Plex 2026.19.1 blocked DTS passthrough and requested AAC transcoding
+for the tested DTS samples. Jellyfin Android TV 0.19.10 output DTS core for the
+Speaker Phase sample despite server DirectPlay, and requested AAC transcoding
+for Gravity. Neither activated the HD transport fix. These player versions are
+not verified working DTS-HD/DTS:X paths; they were not retested on PS7714/PS7717.
+Earlier Emby/Nova/Kodi results do not establish support for every app or firmware.
 
 ## Build and checks
 
@@ -109,7 +150,9 @@ python3 build.py --fetch-runtime
 # Or use an existing official, uncompressed ARM32 runtime:
 python3 build.py --runtime /path/to/frida-inject
 python3 tests/run.py  # additionally requires clang with ASan/UBSan
-python3 tests/package.py dist/firetv-dtshd-passthrough-v0.1.2.zip
+python3 tests/package.py dist/firetv-dtshd-passthrough-v0.1.3.zip
+# Optional external corpus check; vendor binaries are not included:
+python3 tests/firmware.py /path/to/fireos_audio_libs dist/firetv-dtshd-passthrough-v0.1.3.zip
 ```
 
 The download is pinned to Frida 17.22.2 and both compressed and uncompressed
@@ -123,7 +166,7 @@ lifetimes. Nothing is downloaded during installation or boot.
 The native tests use synthetic framing for boundary, fragmentation, discontinuity,
 capacity, error/reset and mute checks. They do not demonstrate audible decoding
 or replace hardware testing. Build/archive hashes change when documentation changes;
-runtime equivalence to the tested v0.1.1 package is checked separately.
+release runtime payloads are compared with the installed, hardware-tested candidate.
 
 ## License and releases
 

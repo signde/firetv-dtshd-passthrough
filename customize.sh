@@ -3,7 +3,8 @@ SKIPMOUNT=true
 [ "$BOOTMODE" = true ] || abort "Install from Magisk in Fire OS."
 [ "$(getprop ro.product.device)" = gazelle ] || abort "Only the tested Fire TV Cube 3 (gazelle) is supported."
 [ "$(getprop ro.build.version.sdk)" = 28 ] || abort "Requires the verified Android 9 audio stack."
-sha256sum -c "$MODPATH/firmware.sha256" >/dev/null 2>&1 || abort "Unsupported audio libraries. No DTS patch installed."
+. "$MODPATH/verify-firmware.sh"
+verify_firmware "$MODPATH" || abort "Unsupported audio libraries. No DTS patch installed."
 (cd "$MODPATH" && sha256sum -c payload.sha256 >/dev/null 2>&1) || abort "Module payload checksum mismatch."
 DOLBY=/data/adb/modules/gazelle_ddplus_bypass
 [ -f "$DOLBY/module.prop" ] && [ ! -e "$DOLBY/disable" ] && [ ! -e "$DOLBY/remove" ] || abort "Enable the separate Fire TV Dolby passthrough module first."

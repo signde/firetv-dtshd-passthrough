@@ -25,7 +25,7 @@ def stage_files(names):
         dest = stage / name
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ROOT / name, dest)
-    for name in ('service.sh', 'customize.sh'):
+    for name in ('service.sh', 'customize.sh', 'verify-firmware.sh'):
         subprocess.run(['sh', '-n', str(stage / name)], check=True)
     return stage
 
@@ -78,13 +78,16 @@ def main():
     runtime = path.read_bytes()
     require_hash(runtime, RUNTIME_SHA, 'Frida runtime')
     names = ['module.prop', 'service.sh', 'customize.sh', 'README.md',
-             'VALIDATION.txt', 'firmware.sha256', 'skip_mount', 'src/native.c',
+             'verify-firmware.sh', 'skip_mount', 'src/native.c',
              'src/agent.js', 'LICENSE', 'NOTICE.md', 'CHANGELOG.md', 'build.py']
-    names += [p.relative_to(ROOT).as_posix() for directory in ('licenses', 'third_party')
+    names += [p.relative_to(ROOT).as_posix() for directory in ('firmware', 'licenses', 'third_party')
               for p in sorted((ROOT/directory).rglob('*')) if p.is_file()]
     stage = stage_files(names)
-    expected = {line.split()[1]: line.split()[0] for line in (ROOT/'firmware.sha256').read_text().splitlines()}
-    source = 'try {\nconst EXPECTED_LIBRARIES=' + json.dumps(expected) + ';\n'
+    expected = [{line.split()[1]: line.split()[0] for line in p.read_text().splitlines()}
+                for p in sorted((ROOT/'firmware').glob('*.sha256'))]
+    if not expected or any(len(profile) != 4 for profile in expected):
+        raise ValueError('Expected complete four-library firmware profiles')
+    source = 'try {\nconst EXPECTED_FIRMWARE_PROFILES=' + json.dumps(expected) + ';\n'
     source += 'const NATIVE_SOURCE=' + json.dumps((ROOT/'src/native.c').read_text()) + ';\n'
     source += (ROOT/'src/agent.js').read_text()
     source += '\n} catch(e) {console.error("DTS_FATAL "+e.stack); throw e;}\n'
@@ -96,7 +99,7 @@ def main():
     manifest = ''.join(sha(p.read_bytes())+'  '+p.relative_to(stage).as_posix()+'\n'
                        for p in sorted(stage.rglob('*')) if p.is_file() and p.relative_to(stage).as_posix() not in ('customize.sh', 'README.md'))
     (stage/'payload.sha256').write_text(manifest)
-    archive(stage, 'firetv-dtshd-passthrough-v0.1.2.zip')
+    archive(stage, 'firetv-dtshd-passthrough-v0.1.3.zip')
 
 if __name__ == '__main__':
     main()
