@@ -17,8 +17,6 @@ log() {
 status() { echo "$*" > "$MODDIR/status.txt"; }
 enabled() { [ ! -e "$MODDIR/disable" ] && [ ! -e "$MODDIR/remove" ]; }
 verify() {
-    [ "$(getprop ro.product.device)" = gazelle ] &&
-    [ "$(getprop ro.build.version.sdk)" = 28 ] &&
     verify_firmware "$MODDIR" &&
     (cd "$MODDIR" && sha256sum -c payload.sha256 >/dev/null 2>&1)
 }
@@ -30,8 +28,10 @@ pause_enabled() {
         left=$((left - 1))
     done
 }
+APARAM=/system/bin/aparam
+ulimit -c 0
 mode() {
-    timeout 5 /system/bin/aparam get 0 hdmi_format 2>/dev/null |
+    timeout 5 "$APARAM" get 0 hdmi_format 2>/dev/null |
         tr -d '\r' | sed -n 's/^hdmi_format=\([0-9][0-9]*\)$/\1/p'
 }
 INJECTOR=
@@ -61,7 +61,7 @@ pause_enabled 65 || exit 0
 rapid=0
 while enabled; do
     verify || { status "UNSUPPORTED"; exit 1; }
-    pid=$(pidof fireos.hardware.audio@2.0-service)
+    pid=$(pidof "$AUDIO_SERVICE")
     case "$pid" in ''|*' '*) pause_enabled 5 || exit 0; continue ;; esac
     # Refuse duplicate attachment, even if a supervisor was killed/restarted.
     start=$(awk '{print $22}' "/proc/$pid/stat" 2>/dev/null)
@@ -75,14 +75,15 @@ while enabled; do
     current=$(mode)
     if [ "$current" != 6 ]; then
         log "HAL startup: applying required HDMI BYPASS (observed '$current')."
-        timeout 5 /system/bin/aparam set 0 hdmi_format=6 >> "$MODDIR/service.log" 2>&1
+        timeout 5 "$APARAM" set 0 hdmi_format=6 >> "$MODDIR/service.log" 2>&1
         current=$(mode)
     fi
     [ "$current" = 6 ] || { log "BYPASS readback failed."; status "BYPASS_FAILED"; exit 1; }
-    [ "$(pidof fireos.hardware.audio@2.0-service)" = "$pid" ] || continue
+    [ "$(pidof "$AUDIO_SERVICE")" = "$pid" ] || continue
     echo "$signature" > "$STATE/attached"
     rm -f "$STATE/ready" "$STATE/fatal"
-    status "ATTACHING pid=$pid"
+    log "Verified $FIRMWARE_PROFILE; using $AUDIO_AGENT for $AUDIO_SERVICE."
+    status "ATTACHING pid=$pid profile=$FIRMWARE_PROFILE"
     FIFO="$STATE/events.fifo"
     rm -f "$FIFO"
     mkfifo "$FIFO" || exit 1
@@ -90,7 +91,7 @@ while enabled; do
         while IFS= read -r line; do
             log "$line"
             case "$line" in
-                *'"kind":"ready"'*) touch "$STATE/ready"; status "ACTIVE pid=$pid version=0.1.3" ;;
+                *'"kind":"ready"'*) touch "$STATE/ready"; status "ACTIVE pid=$pid version=0.2.0" ;;
                 *'DTS_FATAL'*) touch "$STATE/fatal"; status "ATTACH_FAILED pid=$pid" ;;
                 *'"kind":"trial-error"'*) status "STREAM_ERROR pid=$pid (stop playback; see service.log)" ;;
             esac
@@ -98,7 +99,7 @@ while enabled; do
     ) 9>&- &
     LOGGER=$!
     began=$(date +%s)
-    "$MODDIR/bin/frida-inject" -p "$pid" -s "$MODDIR/runtime.js" -R qjs </dev/null > "$FIFO" 2>&1 9>&- &
+    "$MODDIR/bin/frida-inject" -p "$pid" -s "$MODDIR/$AUDIO_AGENT" -R qjs </dev/null > "$FIFO" 2>&1 9>&- &
     INJECTOR=$!
     attempt=0
     while [ ! -f "$STATE/ready" ] && kill -0 "$INJECTOR" 2>/dev/null; do
@@ -124,7 +125,7 @@ while enabled; do
     elapsed=$(( $(date +%s) - began ))
     log "Runtime ended exit=$result after ${elapsed}s."
     enabled || exit 0
-    if [ "$(pidof fireos.hardware.audio@2.0-service)" = "$pid" ]; then
+    if [ "$(pidof "$AUDIO_SERVICE")" = "$pid" ]; then
         status "RUNTIME_LOST_RESTART_REQUIRED pid=$pid"
         exit 1
     fi

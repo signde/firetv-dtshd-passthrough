@@ -79,27 +79,31 @@ def main():
     require_hash(runtime, RUNTIME_SHA, 'Frida runtime')
     names = ['module.prop', 'service.sh', 'customize.sh', 'README.md',
              'verify-firmware.sh', 'skip_mount', 'src/native.c',
-             'src/agent.js', 'LICENSE', 'NOTICE.md', 'CHANGELOG.md', 'build.py']
+             'src/agent.js', 'src/karat.js', 'LICENSE', 'NOTICE.md', 'CHANGELOG.md', 'build.py']
     names += [p.relative_to(ROOT).as_posix() for directory in ('firmware', 'licenses', 'third_party')
               for p in sorted((ROOT/directory).rglob('*')) if p.is_file()]
     stage = stage_files(names)
-    expected = [{line.split()[1]: line.split()[0] for line in p.read_text().splitlines()}
-                for p in sorted((ROOT/'firmware').glob('*.sha256'))]
-    if not expected or any(len(profile) != 4 for profile in expected):
-        raise ValueError('Expected complete four-library firmware profiles')
-    source = 'try {\nconst EXPECTED_FIRMWARE_PROFILES=' + json.dumps(expected) + ';\n'
-    source += 'const NATIVE_SOURCE=' + json.dumps((ROOT/'src/native.c').read_text()) + ';\n'
-    source += (ROOT/'src/agent.js').read_text()
-    source += '\n} catch(e) {console.error("DTS_FATAL "+e.stack); throw e;}\n'
-    (stage/'runtime.js').write_text(source)
-    subprocess.run(['node', '--check', str(stage/'runtime.js')], check=True)
+    for pattern, count, script, output in (
+        ('ps*.sha256', 4, 'agent.js', 'runtime.js'),
+        ('karat-*.sha256', 2, 'karat.js', 'runtime-karat.js'),
+    ):
+        expected = [{line.split()[1]: line.split()[0] for line in p.read_text().splitlines()}
+                    for p in sorted((ROOT/'firmware').glob(pattern))]
+        if not expected or any(len(profile) != count for profile in expected):
+            raise ValueError(f'Expected complete {count}-library profiles: {pattern}')
+        source = 'try {\nconst EXPECTED_FIRMWARE_PROFILES=' + json.dumps(expected) + ';\n'
+        source += 'const NATIVE_SOURCE=' + json.dumps((ROOT/'src/native.c').read_text()) + ';\n'
+        source += (ROOT/'src'/script).read_text()
+        source += '\n} catch(e) {console.error("DTS_FATAL "+e.stack); throw e;}\n'
+        (stage/output).write_text(source)
+        subprocess.run(['node', '--check', str(stage/output)], check=True)
     (stage/'bin').mkdir()
     (stage/'bin/frida-inject').write_bytes(runtime)
     # Magisk removes these root files after installation. Hash persistent payloads.
     manifest = ''.join(sha(p.read_bytes())+'  '+p.relative_to(stage).as_posix()+'\n'
                        for p in sorted(stage.rglob('*')) if p.is_file() and p.relative_to(stage).as_posix() not in ('customize.sh', 'README.md'))
     (stage/'payload.sha256').write_text(manifest)
-    archive(stage, 'firetv-dtshd-passthrough-v0.1.3.zip')
+    archive(stage, 'firetv-dtshd-passthrough-v0.2.0.zip')
 
 if __name__ == '__main__':
     main()

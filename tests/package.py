@@ -20,7 +20,7 @@ def valid(payload):
 
 assert valid(files), 'Post-install payload verification failed'
 for name in ('service.sh', 'runtime.js', 'bin/frida-inject', 'verify-firmware.sh',
-             'firmware/ps7688.sha256', 'firmware/ps7713.sha256', 'firmware/ps7715.sha256'):
+             'runtime-karat.js', 'src/karat.js', 'firmware/ps7688.sha256', 'firmware/ps7713.sha256', 'firmware/ps7715.sha256', *[n for n in files if n.startswith('firmware/karat-') and n.endswith('.sha256')]):
     assert name in manifest, f'Critical payload not covered: {name}'
     damaged = dict(files)
     damaged[name] += b'corruption'

@@ -310,6 +310,6 @@ setTimeout(()=>{
     reset(state);discontinuity(state);clear(out,32768);
     if(pack(state,input,0,out,32768,length,0)!==0 || length.readU32()!==0 || state.readU32()!==0)
       throw new Error('Native startup self-test failed');
-    armed=true;event('ready',{pid:Process.id,arch:Process.arch,version:'0.1.3',capture:false,nativeAfterGc:true});
+    armed=true;event('ready',{pid:Process.id,arch:Process.arch,version:'0.2.0',capture:false,nativeAfterGc:true});
   } catch(e) {console.error('DTS_FATAL '+e.stack);}
 },1000);
